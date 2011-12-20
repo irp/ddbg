@@ -1,6 +1,4 @@
-#ifdef UNICODE
 #define DBGHELP_TRANSLATE_TCHAR
-#endif
 
 #include <Windows.h>
 #include <DbgHelp.h>
@@ -13,14 +11,14 @@ PSYMBOL_INFOW pSymbol;
 DEBUG_EVENT dbgEvent = { 0 };
 
 BOOL NTAPI SetStackFrame
-	(__in      HANDLE hProcess,
+    (__in      HANDLE hProcess,
      __in      HANDLE hThread,
      __inout   STACKFRAME stackFrame,
      __inout   PCONTEXT context,
      __in_opt  PFUNCTION_TABLE_ACCESS_ROUTINE FunctionTableAccessRoutine,
      __in_opt  PGET_MODULE_BASE_ROUTINE GetModuleBaseRoutine) {
 
-	     ZeroMemory(&stackFrame, sizeof(stackFrame));
+	         ZeroMemory(&stackFrame, sizeof(stackFrame));
 		 if (context != NULL) {
 
 	         stackFrame.AddrPC.Offset = context->Eip;
@@ -28,7 +26,7 @@ BOOL NTAPI SetStackFrame
 	         stackFrame.AddrStack.Offset = context->Esp;
 	         stackFrame.AddrStack.Mode = AddrModeFlat;
 	         stackFrame.AddrFrame.Offset = context->Ebp;
-			 stackFrame.AddrFrame.Mode = AddrModeFlat; }
+		 stackFrame.AddrFrame.Mode = AddrModeFlat; }
 
 		 //Note: MachineType IMAGE_FILE_MACHINE_I386
 		 //so if I've no context I've to initialize the 
@@ -43,17 +41,17 @@ BOOL NTAPI SetStackFrame
 				 mov [pBase], ebp }
 
 			 stackFrame.AddrPC.Offset = programCoun;
-	         stackFrame.AddrPC.Mode = AddrModeFlat;
-	         stackFrame.AddrStack.Offset = pStack;
-	         stackFrame.AddrStack.Mode = AddrModeFlat;
-	         stackFrame.AddrFrame.Offset = pBase;
+	                 stackFrame.AddrPC.Mode = AddrModeFlat;
+	                 stackFrame.AddrStack.Offset = pStack;
+	                 stackFrame.AddrStack.Mode = AddrModeFlat;
+	                 stackFrame.AddrFrame.Offset = pBase;
 			 stackFrame.AddrFrame.Mode = AddrModeFlat; }
 
 		 if (hProcess != INVALID_HANDLE_VALUE) {
 			if (StackWalk(IMAGE_FILE_MACHINE_I386, hProcess, hThread, 
-				          &StackFrame, context, 0, FunctionTableAccessRoutine, 
-						  GetModuleBaseRoutine, 0)) {
-							  return TRUE; }
+				      &StackFrame, context, 0, FunctionTableAccessRoutine, 
+				      GetModuleBaseRoutine, 0)) {
+					 return TRUE; }
 			else return FALSE; 
 		 }
 
@@ -66,10 +64,10 @@ PSYMBOL_INFOW NTAPI SetSymbolInformationForAddress
 
 		char buf[sizeof(PSYMBOL_INFOW) + MAX_SYM_NAME * sizeof(TCHAR)];
 		ZeroMemory(buf, sizeof(buf));
-        PSYMBOL_INFOW Symbol = (PSYMBOL_INFOW)buf;
+                PSYMBOL_INFOW Symbol = (PSYMBOL_INFOW)buf;
 
-        Symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
-        Symbol->MaxNameLen = MAX_SYM_NAME;
+                Symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+                Symbol->MaxNameLen = MAX_SYM_NAME;
 
 		if (SymFromAddrW(hProcess, Address, 0, Symbol)) {
 			return Symbol; }
@@ -91,9 +89,7 @@ DWORD NTAPI OnAccessViolationException
 		while (SetStackFrame(hProcess, hThread, StackFrame, &Context, SymFunctionTableAccess, SymGetModuleBase)) {
 		     pSymbol = SetSymbolInformationForAddress(hProcess, StackFrame.AddrPC.Offset);
 			 printf("Flags: %08x\n", &pSymbol->Flags);
-			 //printf("NameLen: %d\n", pSymbol->NameLen);
-			 _tprintf(_T("Name: %s\n"), &pSymbol->Name[0]); } 
-			 
+			 } 	 
 
 		return DBG_EXCEPTION_NOT_HANDLED;
 }
@@ -107,24 +103,24 @@ BOOL NTAPI SetDbgEvents
 		for (;;) {
 			if (WaitForDebugEvent(DbgEvent, INFINITE)) {
 				hThread = OpenThread(THREAD_SET_CONTEXT | THREAD_GET_CONTEXT,
-								     FALSE, DbgEvent->dwThreadId);
+						     FALSE, DbgEvent->dwThreadId);
 				hProcess = OpenProcess(PROCESS_ALL_ACCESS,
-								       FALSE, DbgEvent->dwThreadId);				
-		        SetThreadContext(hThread, &Context);
+						       FALSE, DbgEvent->dwThreadId);				
+		                SetThreadContext(hThread, &Context);
 				SymInitialize(hProcess, NULL, FALSE);
 				switch (DbgEvent->dwDebugEventCode) {
 				case EXCEPTION_DEBUG_EVENT:
-						switch (DbgEvent->u.Exception.ExceptionRecord.ExceptionCode) {
-						case EXCEPTION_ACCESS_VIOLATION:
-							printf("EXCEPTION_ACCESS_VIOLATION\n");			
-				            SuspendThread(hThread);
-							if (DbgEvent->u.Exception.dwFirstChance == 1) printf("!!First chance!!\n");
-							dwContinueStatus = OnAccessViolationException(hThread, hProcess, DbgEvent);
-							ResumeThread(hThread);
-							break;
+					switch (DbgEvent->u.Exception.ExceptionRecord.ExceptionCode) {
+					case EXCEPTION_ACCESS_VIOLATION:
+				             printf("EXCEPTION_ACCESS_VIOLATION\n");			
+				             SuspendThread(hThread);
+					     if (DbgEvent->u.Exception.dwFirstChance == 1) printf("!!First chance!!\n");
+					     dwContinueStatus = OnAccessViolationException(hThread, hProcess, DbgEvent);
+					     ResumeThread(hThread);
+				             break;
 
-						default:
-							break;
+					default:
+					     break;
 						}
 				        break;
 
@@ -138,28 +134,28 @@ BOOL NTAPI SetDbgEvents
 				printf("Exception not handled!\n");
 				DebugBreakProcess(hProcess); }
 			else ContinueDebugEvent(DbgEvent->dwProcessId, DbgEvent->dwThreadId, dwContinueStatus); 
-            CloseHandle(hProcess);
+                        CloseHandle(hProcess);
 		}
 }
 
-NTSTATUS __cdecl main
+int __cdecl main
 	() {
 
 		PROCESS_INFORMATION procInfo;
 		STARTUPINFO startupInfo; 
  
-        ZeroMemory(&startupInfo, sizeof(startupInfo)); 
-        startupInfo.cb = sizeof(startupInfo); 
-        ZeroMemory(&procInfo, sizeof(procInfo));
+                ZeroMemory(&startupInfo, sizeof(startupInfo)); 
+                startupInfo.cb = sizeof(startupInfo); 
+                ZeroMemory(&procInfo, sizeof(procInfo));
 
 		printf("Welocome to dbg\n");
 		if (CreateProcessW(L"C:\\jump.exe", NULL, NULL, NULL, 
-			               FALSE, DEBUG_ONLY_THIS_PROCESS, NULL,
-						   NULL, &startupInfo, &procInfo)) {
+			           FALSE, DEBUG_ONLY_THIS_PROCESS, NULL,
+				   NULL, &startupInfo, &procInfo)) {
 
-							   if (SetDbgEvents(&dbgEvent)) {
+					 if (SetDbgEvents(&dbgEvent)) {
 								   
-							   }
+					 }
 		}
 
 		int c = getchar();
